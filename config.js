@@ -6,7 +6,7 @@ const require = createRequire(import.meta.url);
 
 const DATABASE_URL = process.env.DATABASE_URL || './database.db';
 const config = {
-	SESSION_ID: process.env.SESSION_ID || '',
+	SESSION_ID: process.env.SESSION_ID || 'XSTRO_34_97_25',
 	PREFIX: process.env.PREFIX || '.',
 	SUDO: process.env.SUDO || '',
 	// MENU_IMAGE_URL: 'https://avatars.githubusercontent.com/u/188756392?v=4', // add your images url if u want bot menu with image 
