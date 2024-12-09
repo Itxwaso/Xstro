@@ -5,7 +5,7 @@ bot(
 	{
 		pattern: 'upload',
 		desc: 'Upload files and get a shareable URL.',
-		type: 'tools',
+		type: 'utils',
 	},
 	async message => {
 		if (!message.reply_message?.image && !message.reply_message?.video && !message.reply_message?.audio && !message.reply_message?.document) {
@@ -13,7 +13,7 @@ bot(
 		}
 
 		const msg = await message.send('*Wait...*');
-		const media = await message.downloadAndSaveMedia();
+		const media = await message.download();
 		const res = await uploadFile(media);
 		await msg.edit(res);
 		return await msg.react('✅');

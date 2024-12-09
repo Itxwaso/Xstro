@@ -3,47 +3,40 @@ import { commands, bot } from '../lib/plugins.js';
 import { formatBytes, runtime } from '../lib/utils.js';
 import { platform, totalmem, freemem } from 'os';
 import { fancy } from './bot/font.js';
-import { readFileSync } from 'fs';
 
 bot(
 	{
 		pattern: 'menu',
 		isPublic: true,
-		desc: 'Show All Commands (Dynamic Design)',
+		desc: 'Show All Commands',
 		dontAddCommandList: true,
 	},
 	async message => {
-		let menuText = `╭─ ${config.BOT_INFO.split(';')[1]} ───
+		let menuText = `╭─── ${config.BOT_INFO.split(';')[1]} ────
 │ User: ${message.pushName}
 │ Mode: ${config.MODE}
 │ Uptime: ${runtime(process.uptime())}
 │ Platform: ${platform()}
 │ Plugins: ${commands.length}
 │ Memory: ${formatBytes(totalmem() - freemem())}
-│ Version: ${config.VERSION}
-╰────────────────\n`;
+│ Day: ${new Date().toLocaleDateString('en-US', { weekday: 'long' })}
+│ Date: ${new Date().toLocaleDateString('en-US')}
+│ Date: ${new Date().toLocaleTimeString('en-US', { timeZone: config.TIME_ZONE })}
+╰─────────────`;
 
-		let commandCounter = 1;
-		const categorized = commands
+		let nums = 1;
+		const allCommands = commands
 			.filter(cmd => cmd.pattern && !cmd.dontAddCommandList)
-			.map(cmd => ({
-				name: cmd.pattern.toString().split(/\W+/)[2],
-				category: cmd.type?.toLowerCase() || 'misc',
-			}))
-			.reduce((acc, { name, category }) => {
-				acc[category] = (acc[category] || []).concat(name);
-				return acc;
-			}, {});
+			.map(cmd => cmd.pattern.toString().toUpperCase().split(/\W+/)[2])
+			.sort();
 
-		Object.keys(categorized).forEach(category => {
-			menuText += `\n╭──〈 ${category} 〉────\n`;
-			categorized[category].forEach(cmd => {
-				menuText += `│▸ ${commandCounter}. ${cmd}\n`;
-				commandCounter++;
-			});
-			menuText += `╰──────────────\n`;
+		menuText += `\n\n${`COMMANDS LIST V${config.VERSION}`} \n\n╭─────────\n`;
+		allCommands.forEach(cmd => {
+			menuText += `│${nums}· ${cmd}\n`;
+			nums++;
 		});
-		const gif = readFileSync('./media/intro.mp4');
-		return message.send(gif, { caption: fancy(menuText), gifPlayback: true });
+		menuText += `╰───────────\n`;
+
+		return message.send(fancy(menuText.trim().trim().trim()));
 	},
 );
