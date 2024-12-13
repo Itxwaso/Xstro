@@ -1,4 +1,4 @@
-import { bot } from '../lib/plugins.js';
+import { bot } from '../lib/cmds.js';
 import { autobioDBService, placeholderService } from '../sql/autobio.js';
 
 let autobioInterval;
@@ -8,7 +8,6 @@ bot(
 		pattern: 'autobio ?(.*)',
 		isPublic: false,
 		desc: 'Manage auto bio. Use "on" or "off".',
-		type: 'whatsapp',
 	},
 	async (message, match) => {
 		const action = match?.toLowerCase().trim();

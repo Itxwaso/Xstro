@@ -1,8 +1,10 @@
 import config from '../config.js';
-import { commands, bot } from '../lib/plugins.js';
+import { commands, bot } from '../lib/cmds.js';
 import { formatBytes, runtime } from '../lib/utils.js';
+import { getConfigValues } from '../lib/bot.js';
 import { platform, totalmem, freemem } from 'os';
-import { fancy } from './bot/font.js';
+import { fancy } from '../utils/fancy.js';
+import { readFileSync } from 'fs';
 
 bot(
 	{
@@ -12,9 +14,12 @@ bot(
 		dontAddCommandList: true,
 	},
 	async message => {
-		let menuText = `╭─── ${config.BOT_INFO.split(';')[1]} ────
+		const { mode } = await getConfigValues();
+		const long = String.fromCharCode(8206);
+		const READ_MORE = long.repeat(4000);
+		let intro = `\`\`\`╭─── ${config.BOT_INFO.split(';')[1]} ────
 │ User: ${message.pushName}
-│ Mode: ${config.MODE}
+│ Mode: ${mode ? 'private' : 'public'}
 │ Uptime: ${runtime(process.uptime())}
 │ Platform: ${platform()}
 │ Plugins: ${commands.length}
@@ -22,7 +27,7 @@ bot(
 │ Day: ${new Date().toLocaleDateString('en-US', { weekday: 'long' })}
 │ Date: ${new Date().toLocaleDateString('en-US')}
 │ Date: ${new Date().toLocaleTimeString('en-US', { timeZone: config.TIME_ZONE })}
-╰─────────────`;
+╰─────────────\`\`\`\n${READ_MORE}`;
 
 		let nums = 1;
 		const allCommands = commands
@@ -30,13 +35,39 @@ bot(
 			.map(cmd => cmd.pattern.toString().toUpperCase().split(/\W+/)[2])
 			.sort();
 
-		menuText += `\n\n${`COMMANDS LIST V${config.VERSION}`} \n\n╭─────────\n`;
+		let menuText = `\n\n${`COMMANDS LIST V${config.VERSION}`} \n\n╭─────────\n`;
 		allCommands.forEach(cmd => {
 			menuText += `│${nums}· ${cmd}\n`;
 			nums++;
 		});
-		menuText += `╰───────────\n`;
+		menuText += `╰───────────\n\n> Some Command Are Hidden from the Menu`;
+		const image = readFileSync('./media/intro.mp4');
+		return await message.send(image, { caption: intro + fancy(menuText), gifPlayback: true, contextInfo: { forwardingScore: 1, isForwarded: true, forwardedNewsletterMessageInfo: { newsletterJid: '120363376441437991@newsletter', newsletterName: 'xsᴛʀᴏ ᴍᴅ' } }, quoted_type: 'new' });
+	},
+);
 
-		return message.send(fancy(menuText.trim().trim().trim()));
+bot(
+	{
+		pattern: 'list',
+		isPublic: true,
+		desc: 'Show All Commands',
+		dontAddCommandList: true,
+	},
+	async message => {
+		let menu = 'XSTRO HELP LIST\n\n';
+		let cmdList = [];
+		let cmd, desc;
+		commands.map(command => {
+			if (command.pattern) cmd = command.pattern.toString().split(/\W+/)[2];
+			desc = command.desc || false;
+			if (!command.dontAddCommandList && cmd !== undefined) cmdList.push({ cmd, desc });
+		});
+		cmdList.sort((a, b) => a.cmd.localeCompare(b.cmd));
+		cmdList.forEach(({ cmd, desc }, num) => {
+			menu += `${(num += 1)} ${cmd.trim()}\n`;
+			if (desc) menu += `${desc}\n\n`;
+		});
+
+		return await message.send(`\`\`\`${menu.trim().trim().trim()}\`\`\``);
 	},
 );

@@ -1,15 +1,11 @@
-import config from '../config.js';
-import { bot } from '../lib/plugins.js';
+import { bot } from '../lib/cmds.js';
 import { getBuffer, getJson } from 'utils';
-const base_url = 'https://api.giftedtech.my.id/api/';
-const { API_KEY } = config;
 
 bot(
 	{
 		pattern: 'lyrics',
 		isPublic: true,
 		desc: 'Search Lyrics',
-		type: 'search',
 	},
 	async (message, match) => {
 		const req = match || message.reply_message?.text;
@@ -23,46 +19,9 @@ bot(
 
 bot(
 	{
-		pattern: 'stickersearch',
-		isPublic: true,
-		desc: 'Search and Download Stickers',
-		type: 'search',
-	},
-	async (message, match) => {
-		if (!match) return message.send('```Give me a search query```');
-		const req = await getJson(`${base_url}search/stickersearch?apikey=${API_KEY}&query=${match}`);
-		for (const stickerUrl of req.results.sticker) {
-			const buff = await getBuffer(stickerUrl);
-			await message.send(buff, { type: 'sticker' });
-		}
-	},
-);
-
-bot(
-	{
-		pattern: 'google',
-		isPublic: true,
-		desc: 'Search and Get Google Results',
-		type: 'search',
-	},
-	async (message, match) => {
-		if (!match) return message.send('```Give me a search query```');
-		const req = await getJson(`https://api.giftedtech.my.id/api/search/google?apikey=${API_KEY}&query=${match}`);
-		if (!req.results || req.results.length === 0) return message.send('```No results found for your query.```');
-		let resultsMessage = '';
-		req.results.forEach(result => {
-			resultsMessage += `\n\n*Title:* ${result.title}\n*Description:* ${result.description}\n*URL:* ${result.url}\n\n`;
-		});
-		await message.send(`\`\`\`*Google Search*\n\n${resultsMessage}\`\`\``);
-	},
-);
-
-bot(
-	{
 		pattern: 'imdb',
 		isPublic: true,
 		desc: 'Sends info of a movie or series.',
-		type: 'search',
 	},
 	async (message, match) => {
 		if (!match) return message.send('_Name a Series or movie._');
@@ -78,7 +37,6 @@ bot(
 		pattern: 'weather ?(.*)',
 		isPublic: true,
 		desc: 'weather info',
-		type: 'search',
 	},
 	async (message, match) => {
 		if (!match) return await message.send('*Example : weather delhi*');
@@ -93,5 +51,72 @@ bot(
 		const sunrise = formatTime(sys.sunrise, timezone);
 		const sunset = formatTime(sys.sunset, timezone);
 		return await message.send(`*Name :* ${name}\n*Country :* ${sys.country}\n*Weather :* ${weather[0].description}\n*Temp :* ${Math.floor(main.temp)}°\n*Feels Like :* ${Math.floor(main.feels_like)}°\n*Humidity :* ${main.humidity}%\n*Visibility  :* ${visibility}m\n*Wind* : ${wind.speed}m/s ${degree}\n*Sunrise :* ${sunrise}\n*Sunset :* ${sunset}`);
+	},
+);
+
+bot(
+	{
+		pattern: 'define',
+		isPublic: true,
+		desc: 'Define A Word',
+	},
+	async (message, match) => {
+		if (!match) return message.send('```Provide A Word to Define```');
+		const word = match.trim();
+		const res = await getJson(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+		return res && res.length > 0 ? message.send(`\`\`\`${word}:\n${res[0]?.meanings?.[0]?.definitions?.[0]?.definition}\`\`\``) : message.send('```No definition found for this word.```');
+	},
+);
+
+bot(
+	{
+		pattern: 'rizz',
+		isPublic: true,
+		desc: 'Rizz your babe lol',
+	},
+	async message => {
+		const msg = await message.send('```Yoo````');
+		const res = await getJson('https://rizzapi.vercel.app/random');
+		return msg.edit('```' + res.text + '```');
+	},
+);
+
+bot(
+	{
+		pattern: 'joke',
+		isPublic: true,
+		desc: 'Get a Random Joke',
+	},
+	async message => {
+		const msg = await message.send('```Hmm```');
+		const res = await getJson('https://official-joke-api.appspot.com/random_joke');
+		return msg.edit(`\`\`\`${res.setup} - ${res.punchline}\`\`\``);
+	},
+);
+
+bot(
+	{
+		pattern: 'quotes',
+		isPublic: true,
+		desc: 'Get Quotes',
+	},
+	async message => {
+		const msg = await message.send('```Getting Quotes```');
+		const res = await getJson('https://zenquotes.io/api/random');
+		const { q, a } = res[0];
+		return msg.edit(`\`\`\`Quote: ${q}\nAuthor: ${a}\`\`\``);
+	},
+);
+
+bot(
+	{
+		pattern: 'facts',
+		isPublic: true,
+		desc: 'Get Facts',
+	},
+	async message => {
+		const msg = await message.send('```Fetching Facts```');
+		const res = await getJson('https://uselessfacts.jsph.pl/api/v2/facts/random?language=en');
+		return msg.edit(`\`\`\`${res.text}\`\`\``);
 	},
 );

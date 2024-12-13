@@ -1,4 +1,4 @@
-import { bot } from '../lib/plugins.js';
+import { bot } from '../lib/cmds.js';
 import { inspect } from 'util';
 import { isSudo } from '../sql/sudo.js';
 
@@ -7,9 +7,8 @@ bot(
 		on: 'text',
 		dontAddCommandList: true,
 	},
-	async (message, match, client) => {
-		const owner = isSudo(message.sender);
-		if (!owner) return;
+	async message => {
+		if (!(await isSudo(message.sender, message.user))) return;
 		if (!message.text.startsWith('$ ')) return;
 
 		const code = message.text.slice(2).trim().replace(/\$\s*/g, '');
@@ -44,7 +43,6 @@ bot(
 		pattern: 'eval ?(.*)',
 		isPublic: false,
 		desc: 'Evaluate code',
-		type: 'system',
 	},
 	async (message, match) => {
 		const src_code = match || message.reply_message?.text;

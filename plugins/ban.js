@@ -1,4 +1,4 @@
-import { bot } from '../lib/plugins.js';
+import { bot } from '../lib/cmds.js';
 import { addBan, getBanned, removeBan } from '../sql/ban.js';
 import { isSudo } from '../sql/sudo.js';
 
@@ -7,7 +7,6 @@ bot(
 		pattern: 'ban ?(.*)',
 		isPublic: false,
 		desc: 'Ban a user from the bot',
-		type: 'user',
 	},
 	async (message, match) => {
 		const jid = await message.thatJid(match);
@@ -22,7 +21,6 @@ bot(
 		pattern: 'unban ?(.*)',
 		isPublic: false,
 		desc: 'Unban a user from the bot',
-		type: 'user',
 	},
 	async (message, match) => {
 		const jid = await message.thatJid(match);
@@ -36,7 +34,6 @@ bot(
 		pattern: 'getban',
 		isPublic: false,
 		desc: 'Get a list of all banned users',
-		type: 'user',
 	},
 	async message => {
 		const bannedUsers = await getBanned();

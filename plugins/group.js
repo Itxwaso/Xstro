@@ -1,32 +1,28 @@
-import { bot } from '../lib/plugins.js';
+import { bot } from '../lib/cmds.js';
 import { delay } from 'baileys';
 import { numtoId } from '../lib/utils.js';
-import { Antilink } from '../sql/antilink.js';
-import { AntiWord } from '../sql/antiword.js';
 
 bot(
 	{
 		pattern: 'add',
 		isPublic: false,
 		isGroup: true,
-		desc: 'Adds A User to Group',
-		type: 'group',
+		desc: 'Adds a user to the group',
 	},
 	async (message, match) => {
-		if (!message.isAdmin) return message.send('```You are not an Admin```');
-		if (!message.isBotAdmin) return message.send('```I am not an Admin```');
+		if (!message.isAdmin) return message.send('You are not an Admin');
+		if (!message.isBotAdmin) return message.send('I am not an Admin');
 		const jid = await message.thatJid(match);
 		try {
 			await message.client.groupParticipantsUpdate(message.jid, [jid], 'add');
 			return message.send(`_@${jid.split('@')[0]} added_`, { mentions: [jid] });
 		} catch {
 			const inviteLink = await message.client.groupInviteCode(message.jid);
-			const userMessage = {
-				text: `_@${message.sender.split('@')[0]} wants to add you to the group._\n\n*_Join here: https://chat.whatsapp.com/${inviteLink}_*\n`,
+			await message.send(jid, {
+				text: `_@${message.sender.split('@')[0]} wants to add you to the group._\n\n*_Join here: https://chat.whatsapp.com/${inviteLink}_*`,
 				mentions: [message.sender],
-			};
-			await message.send(jid, userMessage);
-			return message.send("_Can't Added User, Invite Sent In DM_");
+			});
+			return message.send("_Can't add user, invite sent in DM_");
 		}
 	},
 );
@@ -37,7 +33,6 @@ bot(
 		isPublic: false,
 		isGroup: true,
 		desc: 'Create and Share Advertisement Messages to all Your Groups',
-		type: 'group',
 	},
 	async (message, match) => {
 		const adMsg = match || message.reply_message?.text;
@@ -61,96 +56,10 @@ bot(
 
 bot(
 	{
-		pattern: 'antilink ?(.*)',
-		isPublic: true,
-		isGroup: true,
-		desc: 'Setup Antilink For Groups',
-		type: 'Group',
-	},
-	async (message, match) => {
-		if (!message.isAdmin) return message.send('```You are not an Admin```');
-		if (!message.isBotAdmin) return message.send('```I am not an Admin```');
-
-		const [settings] = await Antilink.findOrCreate({
-			where: { groupId: message.jid },
-			defaults: { groupId: message.jid, warnings: {} },
-		});
-
-		const cmd = match.trim().toLowerCase();
-		const validActions = ['delete', 'warn', 'kick'];
-
-		if (['on', 'off'].includes(cmd)) {
-			const newState = cmd === 'on';
-			if (settings.enabled === newState) return message.send(`_Antilink is already ${cmd}_`);
-			settings.enabled = newState;
-			await settings.save();
-			return message.send(`_Antilink ${cmd === 'on' ? 'enabled' : 'disabled'}!_`);
-		}
-
-		if (validActions.includes(cmd)) {
-			if (!settings.enabled) return message.send('_Enable antilink first using antilink on_');
-			if (settings.action === cmd) return message.send(`_Antilink action is already set to ${cmd}_`);
-			settings.action = cmd;
-			await settings.save();
-			return message.send(`_Antilink action set to ${cmd}_`);
-		}
-		return message.send('_' + message.prefix + 'antilink on/off/delete/kick/warn_');
-	},
-);
-
-bot(
-	{
-		pattern: 'antiword',
-		isPublic: true,
-		isGroup: true,
-		desc: 'Setup Antiword for Groups',
-		type: 'group',
-	},
-	async (message, match) => {
-		if (!message.isAdmin) return message.send('```You are not an Admin```');
-		if (!message.isBotAdmin) return message.send('```I am not an Admin```');
-
-		const groupId = message.jid;
-		const antiWordConfig = await AntiWord.findOrCreate({ where: { groupId } });
-
-		if (!match) return message.send(`_${message.prefix}antiword on_\n_${message.prefix}antiword off_\n_${message.prefix}antiword set badword1,badword2_`);
-
-		if (match === 'on') {
-			if (antiWordConfig[0].isEnabled) return message.send('_Antiword is already enabled for this group._');
-			antiWordConfig[0].isEnabled = true;
-			await antiWordConfig[0].save();
-			const words = antiWordConfig[0].filterWords;
-			return message.send(words.length > 0 ? '_Antiword has been enabled for this group._' : '_Antiword is enabled but no bad words were set._');
-		}
-
-		if (match === 'off') {
-			if (!antiWordConfig[0].isEnabled) return message.send('_Antiword is already disabled for this group._');
-			antiWordConfig[0].isEnabled = false;
-			await antiWordConfig[0].save();
-			return message.send('_Antiword has been disabled for this group._');
-		}
-
-		if (match.startsWith('set ')) {
-			const words = match
-				.slice(4)
-				.split(',')
-				.map(word => word.trim());
-			antiWordConfig[0].filterWords = words;
-			await antiWordConfig[0].save();
-			return message.send(`_Antiword filter updated with words: ${words.join(', ')}_`);
-		}
-
-		return message.send(`_${message.prefix}antiword on_\n_${message.prefix}antiword off_\n_${message.prefix}antiword set badword1,badword2_`);
-	},
-);
-
-bot(
-	{
 		pattern: 'ckick',
 		isPublic: false,
 		isGroup: true,
 		desc: 'Kick a certain country code from a group',
-		type: 'group',
 	},
 	async (message, match) => {
 		if (!message.isAdmin) return message.send('```You are not an Admin```');
@@ -176,7 +85,6 @@ bot(
 		isPublic: true,
 		isGroup: true,
 		desc: 'Change Group Name',
-		type: 'group',
 	},
 	async (message, match) => {
 		if (!message.isAdmin) return message.send('```You are not an Admin```');
@@ -194,7 +102,6 @@ bot(
 		isPublic: true,
 		isGroup: true,
 		desc: 'Changes Group Description',
-		type: 'group',
 	},
 	async (message, match) => {
 		if (!message.isAdmin) return message.send('```You are not an Admin```');
@@ -211,7 +118,6 @@ bot(
 		isPublic: true,
 		isGroup: true,
 		desc: 'Promotes Someone to Admin',
-		type: 'group',
 	},
 	async (message, match) => {
 		if (!message.isAdmin) return message.send('```You are not an Admin```');
@@ -237,7 +143,6 @@ bot(
 		isPublic: true,
 		isGroup: true,
 		desc: 'Demotes Someone from Admin',
-		type: 'group',
 	},
 	async (message, match) => {
 		if (!message.isAdmin) return message.send('```You are not an Admin```');
@@ -263,7 +168,6 @@ bot(
 		isPublic: false,
 		isGroup: true,
 		desc: 'Kicks A Participant from Group',
-		type: 'group',
 	},
 	async (message, match) => {
 		if (!message.isAdmin) return message.send('```You are not an Admin```');
@@ -281,7 +185,6 @@ bot(
 		isPublic: true,
 		isGroup: true,
 		desc: 'Get Group Invite link',
-		type: 'group',
 	},
 	async message => {
 		if (!message.isAdmin) return message.send('```You are not an Admin```');
@@ -298,7 +201,6 @@ bot(
 		isPublic: false,
 		isGroup: true,
 		desc: 'leave a group',
-		type: 'group',
 	},
 	async message => {
 		await message.send('_Left Group_');
@@ -312,7 +214,6 @@ bot(
 		isPublic: true,
 		isGroup: true,
 		desc: 'Creates a poll in the group.',
-		type: 'group',
 	},
 	async (message, match) => {
 		let [pollName, pollOptions] = match.split(';');
@@ -334,7 +235,6 @@ bot(
 		isPublic: true,
 		isGroup: true,
 		desc: 'Tag all participants in the group with an optional message',
-		type: 'group',
 	},
 	async (message, match) => {
 		const msg = match || message.reply_message?.text;
@@ -355,7 +255,6 @@ bot(
 		isPublic: true,
 		isGroup: true,
 		desc: 'Tag all participants in the group',
-		type: 'group',
 	},
 	async (message, match) => {
 		const msg = match || message.reply_message?.text;
@@ -376,7 +275,6 @@ bot(
 		isPublic: true,
 		isGroup: true,
 		desc: 'Mute a group (admins only)',
-		type: 'group',
 	},
 	async message => {
 		if (!message.isAdmin) return message.send('```You are not an Admin```');
@@ -394,7 +292,6 @@ bot(
 		isPublic: true,
 		isGroup: true,
 		desc: 'Unmute a group (admins only)',
-		type: 'group',
 	},
 	async message => {
 		if (!message.isAdmin) return message.send('```You are not an Admin```');
@@ -412,7 +309,6 @@ bot(
 		isPublic: false,
 		isGroup: true,
 		desc: 'Tags Admins of A Group',
-		type: 'group',
 	},
 	async message => {
 		const groupMetadata = await message.client.groupMetadata(message.jid);
@@ -433,7 +329,6 @@ bot(
 		isPublic: true,
 		isGroup: true,
 		desc: 'Revoke Invite link',
-		type: 'group',
 	},
 	async message => {
 		if (!message.isAdmin) return message.send('```You are not an Admin```');
@@ -449,7 +344,6 @@ bot(
 		isPublic: false,
 		isGroup: true,
 		desc: 'Changes Group Profile Picture',
-		type: 'group',
 	},
 	async message => {
 		if (!message.isAdmin) return message.send('```You are not an Admin```');
@@ -467,7 +361,6 @@ bot(
 		isPublic: true,
 		isGroup: true,
 		desc: 'Lock groups settings',
-		type: 'group',
 	},
 	async message => {
 		if (!message.isAdmin) return message.send('```You are not an Admin```');
@@ -485,7 +378,6 @@ bot(
 		isPublic: true,
 		isGroup: true,
 		desc: 'Unlock groups settings',
-		type: 'group',
 	},
 	async message => {
 		if (!message.isAdmin) return message.send('```You are not an Admin```');
@@ -503,7 +395,6 @@ bot(
 		isPublic: true,
 		isGroup: true,
 		desc: 'Shows the pending requests of the group',
-		type: 'group',
 	},
 	async message => {
 		if (!message.isAdmin) return message.send('```You are not an Admin```');
@@ -526,7 +417,6 @@ bot(
 		isPublic: true,
 		isGroup: true,
 		desc: 'Accept all join requests',
-		type: 'group',
 	},
 	async message => {
 		if (!message.isAdmin) return message.send('```You are not an Admin```');
@@ -551,7 +441,6 @@ bot(
 		isPublic: true,
 		isGroup: true,
 		desc: 'Reject all join requests',
-		type: 'group',
 	},
 	async message => {
 		if (!message.isAdmin) return message.send('```You are not an Admin```');
@@ -575,7 +464,6 @@ bot(
 		isPublic: false,
 		isGroup: true,
 		desc: 'Removes Group Profile Photo',
-		type: 'group',
 	},
 	async message => {
 		if (!message.isAdmin) return message.send('```You are not an Admin```');
@@ -591,7 +479,6 @@ bot(
 		isPublic: false,
 		isGroup: true,
 		desc: 'Creates A New Group',
-		type: 'group',
 	},
 	async (message, match) => {
 		if (!match) return await message.send(`*Provide group name: .newgc GroupName*`);

@@ -1,31 +1,38 @@
-import { bot } from '../lib/plugins.js';
-import { exec } from 'child_process';
-import { manageProcess } from '../lib/utils.js';
-import { performUpdate, updateHerokuApp } from '../lib/updater.js';
+import { bot } from '../lib/cmds.js';
+import { isLatest, updateBot, updateHerokuApp, upgradeBot } from '../utils/updater.js';
 
 bot(
 	{
 		pattern: 'update',
 		isPublic: false,
-		desc: 'Update the bot',
-		type: 'system',
+		desc: 'Updates Bot',
 	},
 	async (message, match) => {
-		const updateInfo = await performUpdate();
-		if (typeof updateInfo === 'string') {
-			message.send('```' + updateInfo + '```');
-		} else {
-			if (match === 'now') {
-				message.send('Restarting bot...');
-				exec('git stash && git pull origin master', (pullErr, stderr) => {
-					if (pullErr) return message.send('Error pulling updates: ' + stderr);
-					manageProcess('restart');
-				});
-			} else {
-				const changes = `*New Update*\n\n*Changes:*\n${updateInfo}\n\n*Use:* ${message.prefix}update now`;
-				message.send('```' + changes + '```');
-			}
+		const updated = await isLatest();
+		if (updated.latest) {
+			return message.send('```You are on the Latest Update```');
 		}
+		await message.send(`\`\`\`Old Patch: ${updated.localCommit}\n\nLatest Patch: ${updated.remoteCommit}\`\`\``);
+		if (match.toString().toLowerCase() === 'now') {
+			await message.send('```Updating Bot```');
+			await updateBot();
+			await message.send('```Bot Updated```');
+		} else {
+			return message.send('```Invalid, use ' + message.prefix + 'update now```');
+		}
+	},
+);
+
+bot(
+	{
+		pattern: 'upgrade',
+		isPublic: false,
+		desc: 'Upgrades Bot',
+	},
+	async message => {
+		await message.send('```Upgrading Bot Files```');
+		await upgradeBot();
+		return message.send('```Upgrade Success```');
 	},
 );
 

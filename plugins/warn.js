@@ -1,40 +1,30 @@
-import { bot } from '../lib/plugins.js';
-import { getWarn, resetWarn, addWarn } from '../sql/warn.js';
+import { bot } from '../lib/cmds.js';
+import { addWarn, getWarn, resetWarn } from '../sql/warn.js';
+import config from '../config.js';
+
+const { WARN_COUNT } = config;
 
 bot(
 	{
 		pattern: 'warn',
 		isPublic: false,
-		desc: 'Warns a user',
-		type: 'user',
+		desc: 'Warn a user for violating rules',
 	},
 	async (message, match) => {
 		const jid = await message.thatJid(match);
-		const response = await getWarn(jid);
-
-		if (response.success) {
-			const warnMsg = `@${jid.split('@')[0]} *has been warned.*\n\n*Warnings:* ${response.warnings}`;
-			await message.send(warnMsg, { mentions: [jid] });
-
-			if (response.warnings > 2) {
-				if (message.isGroup) {
-					if (!message.isBotAdmin) return (await message.Block(jid)) && message.send('_Blocked Idiot_');
+		const { success, warnings } = await addWarn(jid);
+		if (success) {
+			if (warnings >= WARN_COUNT) {
+				await message.send(`\`\`\`User has been warned ${warnings} times. Maximum limit reached. Taking action!\`\`\``);
+				if (message.isGroup && message.isBotAdmin) {
 					await message.client.groupParticipantsUpdate(message.jid, [jid], 'remove');
-					await resetWarn(jid);
-					await message.send(`@${jid.split('@')[0]} *was removed from the group and blocked for exceeding the warning limit.*`, { mentions: [jid] });
+					await message.send(`\`\`\`@${jid.split('@')[0]} has been dealt with\`\`\``, { mentions: [jid] });
+					await message.Block(jid);
 				} else {
-					await message.client.updateBlockStatus(message.jid, 'block');
-					await resetWarn(jid);
-					await message.send(`*User @${jid.split('@')[0]} was blocked for exceeding the warning limit.*`, { mentions: [jid] });
+					await message.Block(jid);
 				}
-			}
-		} else {
-			const addResponse = await addWarn(jid);
-			if (addResponse.success) {
-				const warnMsg = `@${jid.split('@')[0]} *has been warned.*\n\n*Warnings:* ${addResponse.warnings}`;
-				await message.send(warnMsg, { mentions: [jid] });
 			} else {
-				await message.send('_Failed to add a warning_');
+				await message.send(`\`\`\`@${jid.split('@')[0]} has been warned.\nWarnings: ${warnings}\`\`\``, { mentions: [jid] });
 			}
 		}
 	},
@@ -42,35 +32,28 @@ bot(
 
 bot(
 	{
-		pattern: 'rwarn',
+		pattern: 'getwarn',
 		isPublic: false,
-		desc: 'Resets a user’s warnings',
-		type: 'user',
+		desc: 'Check warnings of a user',
 	},
 	async (message, match) => {
 		const jid = await message.thatJid(match);
-		await resetWarn(jid);
-		await message.send(`@${jid.split('@')[0]}'s warnings have been reset.`, {
-			mentions: [jid],
-		});
+		const { warnings } = await getWarn(jid);
+		await message.send(`\`\`\`@${jid.split('@')[0]} has ${warnings} warnings.\`\`\``);
 	},
 );
 
 bot(
 	{
-		pattern: 'getwarns',
+		pattern: 'resetwarn',
 		isPublic: false,
-		desc: 'Checks a user’s warnings',
-		type: 'user',
+		desc: 'Reset warnings of a user',
 	},
 	async (message, match) => {
 		const jid = await message.thatJid(match);
-		const response = await getWarn(jid);
-		if (response.success) {
-			const warnMsg = `@${jid.split('@')[0]} has ${response.warnings} warning(s).`;
-			await message.send(warnMsg, { mentions: [jid] });
-		} else {
-			await message.send('_Failed to retrieve warnings_');
+		const { success } = await resetWarn(jid);
+		if (success) {
+			await message.send('```@' + jid.split('@')[0] + ' is free as a Cow```', { mentions: [jid] });
 		}
 	},
 );

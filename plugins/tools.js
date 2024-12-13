@@ -1,7 +1,7 @@
 import config from '../config.js';
 import { extractUrlFromString, getJson } from 'utils';
-import { bot } from '../lib/plugins.js';
-import { base64, dbinary, deobfuscate, ebinary, obfuscate, remini, solveMath, toAscii } from './bot/tools.js';
+import { bot } from '../lib/cmds.js';
+import { base64, dbinary, deobfuscate, ebinary, obfuscate, remini, solveMath, toAscii } from '../lib/xstro.js';
 
 bot(
 	{
@@ -26,7 +26,7 @@ bot(
 		const url = extractUrlFromString(match || message.reply_message?.text);
 		if (!url) return message.send('_No Url found_');
 		const msg = await message.send('*wait*');
-		const res = await getJson(`${config.BASE_API_URL}/api/shorten?url=${url}`);
+		const res = await getJson(`${config.XSTRO_API}/api/shorten?url=${url}`);
 		return await msg.edit(res.link);
 	},
 );

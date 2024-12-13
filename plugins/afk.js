@@ -1,4 +1,4 @@
-import { bot } from '../lib/plugins.js';
+import { bot } from '../lib/cmds.js';
 import { getAfkMessage, setAfkMessage, delAfkMessage } from '../sql/afk.js';
 import { isSudo } from '../sql/sudo.js';
 
@@ -9,7 +9,6 @@ bot(
 		pattern: 'afk',
 		isPublic: false,
 		desc: 'Manage the global AFK message',
-		type: 'user',
 	},
 	async (message, match, { prefix }) => {
 		if (!match) return message.send(`\`\`\`${prefix}afk on\n${prefix}afk set <your afk message>\n${prefix}afk off\`\`\``);

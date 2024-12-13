@@ -1,4 +1,4 @@
-import { bot } from '../lib/plugins.js';
+import { bot } from '../lib/cmds.js';
 import config from '../config.js';
 import { aliveMessage, setAliveMsg } from '../sql/alive.js';
 
@@ -7,7 +7,6 @@ bot(
 		pattern: 'alive',
 		isPublic: true,
 		desc: 'Is Bot Alive?',
-		type: 'user',
 	},
 	async (message, match) => {
 		if (match) {
