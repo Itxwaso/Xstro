@@ -1,12 +1,13 @@
-name: xstro
+name: Xstro GitHub Packages
 
 on:
-     push:
-          branches:
-               - master
+     release:
+          types:
+               - created
+               - published
 
 jobs:
-     publish-npm:
+     publish-package:
           runs-on: ubuntu-latest
           steps:
                - name: Checkout repository
@@ -16,12 +17,13 @@ jobs:
                  uses: actions/setup-node@v4
                  with:
                       node-version: 20
-                      registry-url: https://registry.npmjs.org/
+                      registry-url: https://npm.pkg.github.com/
 
                - name: Install dependencies
                  run: yarn install --frozen-lockfile
 
-               - name: Publish package to npm
+               - name: Configure .npmrc for GitHub Packages
+                 run: echo "//npm.pkg.github.com/:_authToken=${{ secrets.package_git }}" > ~/.npmrc
+
+               - name: Publish package to GitHub Packages
                  run: yarn publish --non-interactive
-                 env:
-                      NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
