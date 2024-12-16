@@ -1,7 +1,10 @@
 import { bot } from '../lib/cmds.js';
-import { loadMessage } from '../sql/store.js';
+import { getName, loadMessage } from '../sql/store.js';
 import { numtoId } from '../lib/utils.js';
 import { smsg } from '../lib/message.js';
+import config from '../config.js';
+import { getBuffer } from 'xstro-utils';
+import { isJidGroup } from 'baileys';
 
 bot(
 	{
@@ -186,7 +189,9 @@ bot(
 		let jid;
 		if (message.mention && message.mention[0]) {
 			jid = message.mention[0];
-		} else if (match) {
+		} else if (isJidGroup(match)) {
+			jid = match;
+		} else if (!isJidGroup(match)) {
 			jid = numtoId(match);
 		}
 		if (!jid) return message.send('_You have to provide a number/tag someone_');
@@ -305,3 +310,59 @@ bot(
 		await message.client.star(jid, messages, star);
 	},
 );
+
+bot(
+	{
+		pattern: 'owner',
+		isPublic: true,
+		desc: 'Get Bot Owner',
+	},
+	async message => {
+		const name = await getName(message.user);
+		const img = await getBuffer('https://avatars.githubusercontent.com/u/188756392?v=4');
+		const vcard = 'BEGIN:VCARD\n' + 'VERSION:3.0\n' + 'FN:' + name + '\n' + 'ORG:' + config.BOT_INFO.split(';')[0] + '\n' + 'TEL;type=CELL;type=VOICE;waid=' + message.user.split('@')[0] + ':' + message.user.split('@')[0] + '\n' + 'END:VCARD';
+
+		return await message.client.sendMessage(message.jid, {
+			contacts: {
+				displayName: name,
+				contacts: [{ vcard }],
+			},
+			contextInfo: {
+				forwardingScore: 999,
+				isForwarded: true,
+				externalAdReply: {
+					title: config.BOT_INFO.split(';')[0],
+					body: config.BOT_INFO.split(';')[1],
+					mediaType: 1,
+					thumbnail: img,
+					sourceUrl: 'https://github.com/AstroX11/Xstro',
+					renderLargerThumbnail: true,
+				},
+			},
+		});
+	},
+);
+
+//===============================addded gjid
+
+bot(
+	{
+	  pattern: 'gjid',
+	  isPublic: true,
+	  desc: 'Get JID of the Current Group',
+	},
+	async (message) => {
+	  try {
+
+		const groupJid = message.chat || message.jid;
+		if (!groupJid.endsWith('@g.us')) {
+		  await message.send('_This command can only be used in groups._');
+		  return;
+		}
+		await message.send(`Group JID: ${groupJid}`);
+	  } catch (error) {
+		console.error('Error fetching group JID:', error);
+		await message.send('_Failed to fetch the group JID. Please try again._');
+	  }
+	}
+  );
