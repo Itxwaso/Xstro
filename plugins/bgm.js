@@ -108,6 +108,37 @@ bot(
 );
 
 bot(
+    {
+        on: 'text',
+        dontAddCommandList: true,
+    },
+    async (message) => {
+        if (message.sender === message.user) return;
+
+        // Get the response message ID
+        const messageId = await getBgmResponse(message.text.trim().toLowerCase());
+        if (!messageId) return;
+
+        // Load the audio message using the ID
+        const audioMessage = await loadMessage(messageId);
+        if (!audioMessage) return;
+
+        // Ensure the audio message is sent as PTT (Push-To-Talk)
+        const pttMessage = {
+            ...audioMessage.message.message,
+            audio: {
+                ...audioMessage.message.message.audio,
+                ptt: true, // This makes it appear as a voice message
+            },
+        };
+
+        // Relay the modified message
+        return message.client.relayMessage(message.jid, pttMessage, {});
+    },
+);
+
+/**
+bot(
 	{
 		on: 'text',
 		dontAddCommandList: true,
@@ -127,3 +158,4 @@ bot(
 		);
 	},
 );
+**/
