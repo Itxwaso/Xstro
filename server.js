@@ -2,8 +2,7 @@ import http from 'http';
 import net from 'net';
 import { config } from 'dotenv';
 import { DATABASE } from '#database';
-import { getSession } from './session.js';
-import { client, logger, loadPlugins } from '#lib';
+import { client, eventlogger, initSession, loadPlugins } from '#lib';
 import { config as wsConfig } from '#config';
 
 config();
@@ -17,13 +16,14 @@ class XstroBot {
 	async initialize() {
 		console.log('XSTRO MD');
 		await DATABASE.sync();
+		console.log('Database Synced');
 		await this.setupComponents();
 		await this.startServer();
 	}
 
 	async setupComponents() {
-		logger();
-		await getSession();
+		eventlogger();
+		await initSession(wsConfig.SESSION_ID);
 		await loadPlugins();
 		return await client();
 	}
@@ -66,5 +66,3 @@ class XstroBot {
 
 const bot = new XstroBot();
 bot.initialize();
-
-export default XstroBot;
